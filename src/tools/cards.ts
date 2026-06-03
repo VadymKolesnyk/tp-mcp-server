@@ -149,7 +149,8 @@ export function registerCardTools(server: McpServer, client: TpClient) {
   server.registerTool(
     "tp_create_card",
     {
-      description: "Create a new TP card (UserStory/Bug/Feature/Task/Epic).",
+      description:
+        "Create a new TP card (UserStory/Bug/Feature/Task/Epic). Custom fields can be set via the customFields array (e.g. [{name:'Release Notes', value:'...'}]).",
       inputSchema: TpCreateCardInput,
     },
     async (args) => {
@@ -164,6 +165,9 @@ export function registerCardTools(server: McpServer, client: TpClient) {
       if (a.featureId) body.Feature = { Id: a.featureId };
       if (a.releaseId) body.Release = { Id: a.releaseId };
       if (a.tags) body.Tags = a.tags;
+      if (a.customFields?.length) {
+        body.CustomFields = a.customFields.map((cf) => ({ Name: cf.name, Value: cf.value }));
+      }
 
       const created = await client.post<GeneralCard>(pluralPath(a.kind), body);
       return {
@@ -176,7 +180,7 @@ export function registerCardTools(server: McpServer, client: TpClient) {
     "tp_update_card",
     {
       description:
-        "Update a TP card. Partial update — only provided fields are modified. The `description` field is stored as HTML; before changing it, call tp_get_card with includeRawHtml=true so you can preserve existing markup (headings, lists, images, code) instead of replacing it with plain text.",
+        "Update a TP card. Partial update — only provided fields are modified. The `description` field is stored as HTML; before changing it, call tp_get_card with includeRawHtml=true so you can preserve existing markup (headings, lists, images, code) instead of replacing it with plain text. Custom fields (including RichText fields like 'Release Notes') can be set via the customFields array, e.g. [{name:'Release Notes', value:'<p>...</p>'}]; field names must match TP exactly.",
       inputSchema: TpUpdateCardInput,
     },
     async (args) => {
@@ -198,6 +202,9 @@ export function registerCardTools(server: McpServer, client: TpClient) {
       if (a.assignedUserId) body.AssignedUser = [{ Id: a.assignedUserId }];
       if (a.releaseId) body.Release = { Id: a.releaseId };
       if (a.tags !== undefined) body.Tags = a.tags;
+      if (a.customFields?.length) {
+        body.CustomFields = a.customFields.map((cf) => ({ Name: cf.name, Value: cf.value }));
+      }
 
       const updated = await client.post<GeneralCard>(`${pluralPath(a.kind)}/${a.id}`, body);
       return {

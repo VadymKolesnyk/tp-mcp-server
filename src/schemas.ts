@@ -3,6 +3,19 @@ import { z } from "zod";
 export const CardKindEnum = z.enum(["UserStory", "Bug", "Feature", "Task", "Epic"]);
 export type CardKind = z.infer<typeof CardKindEnum>;
 
+export const CustomFieldInput = z.object({
+  name: z
+    .string()
+    .min(1)
+    .describe("Custom field name exactly as shown in TP, e.g. 'Release Notes'"),
+  value: z
+    .union([z.string(), z.number(), z.boolean(), z.null()])
+    .describe(
+      "Value to set. For RichText/Text fields pass an HTML or plain string; for Number fields pass a number; for DropDown pass the option string; pass null to clear."
+    ),
+});
+export type CustomFieldValue = z.infer<typeof CustomFieldInput>;
+
 export const TpQueryInput = {
   entityType: z.string().describe("TP entity name, e.g. UserStory, Bug, Project, Release"),
   where: z.string().optional().describe("TP where-clause, e.g. \"EntityState.Name eq 'Open'\""),
@@ -49,6 +62,12 @@ export const TpCreateCardInput = {
   featureId: z.number().int().positive().optional(),
   releaseId: z.number().int().positive().optional(),
   tags: z.string().optional().describe("Comma-separated tag list"),
+  customFields: z
+    .array(CustomFieldInput)
+    .optional()
+    .describe(
+      "Custom fields to set on the new card, e.g. [{name:'Release Notes', value:'...'}]. Names must match TP exactly."
+    ),
 };
 
 export const TpUpdateCardInput = {
@@ -61,6 +80,12 @@ export const TpUpdateCardInput = {
   assignedUserId: z.number().int().positive().optional(),
   releaseId: z.number().int().positive().optional(),
   tags: z.string().optional(),
+  customFields: z
+    .array(CustomFieldInput)
+    .optional()
+    .describe(
+      "Custom fields to set, e.g. [{name:'Release Notes', value:'<p>...</p>'}]. Names must match TP exactly (case-sensitive); RichText fields accept HTML. Use tp_get_card / tp_query with include ['CustomFields'] to see available field names."
+    ),
 };
 
 export const TpListCommentsInput = {
